@@ -11,7 +11,7 @@ The **Pick-to-Light System** is an industrial warehouse automation solution wher
 
 When an order is received, the system identifies the required products and activates the corresponding light indicators at the storage locations. The operator follows the illuminated locations, picks the required quantity, and confirms the operation.
 
-### Example Workflow
+Workflow
 
 **Order Received → Product Location Identified → LED Turns ON → Operator Picks Item → Quantity Confirmed → LED Turns OFF → Next Item**
 
@@ -113,91 +113,6 @@ Depending on the implementation, the project can use:
 | Controller | Microcontroller / PLC |
 | Version Control | Git / GitHub |
 
-
-
-Database Design
-
-A basic database structure can contain the following tables:
-
- Products
-
-| Field | Description |
-|---|---|
-| id | Product ID |
-| product_code | Unique product code |
-| product_name | Product name |
-| quantity | Available quantity |
-
- Locations
-
-| Field | Description |
-|---|---|
-| id | Location ID |
-| location_code | Warehouse location |
-| rack | Rack number |
-| bin | Bin number |
-
- Orders
-
-| Field | Description |
-|---|---|
-| id | Order ID |
-| order_number | Unique order number |
-| status | Order status |
-| created_at | Creation timestamp |
-
- Order Items
-
-| Field | Description |
-|---|---|
-| id | Item ID |
-| order_id | Related order |
-| product_id | Product |
-| required_quantity | Required quantity |
-
- Picking Tasks
-
-| Field | Description |
-|---|---|
-| id | Task ID |
-| order_item_id | Order item |
-| location_id | Picking location |
-| quantity | Quantity to pick |
-| status | Picking status |
-
-Picking Process
-
-```text
-        Order Created
-             │
-             ▼
-    Identify Required Items
-             │
-             ▼
-     Find Storage Location
-             │
-             ▼
-      Activate PTL Light
-             │
-             ▼
-    Display Required Quantity
-             │
-             ▼
-      Operator Picks Item
-             │
-             ▼
-      Press Confirmation
-             │
-             ▼
-      Update Inventory
-             │
-             ▼
-       Complete Task
-             │
-             ▼
-      Activate Next PTL
-```
-
 Benefits
 
  Operational Benefits
@@ -216,66 +131,6 @@ Benefits
 - Improved inventory accuracy
 - Better customer satisfaction
 - Real-time operational visibility
-
-Hardware Integration
-
-A typical PTL station can be represented as:
-
-
-       ┌──────────────────────┐
-       │   Pick-to-Light Unit │
-       │                      │
-       │     🔴 / 🟢 LED      │
-       │                      │
-       │       [  05  ]       │
-       │      Quantity        │
-       │                      │
-       │       [ PICK ]       │
-       │      Push Button     │
-       └──────────┬───────────┘
-                  │
-                  ▼
-             Controller
-                  │
-                  ▼
-            Backend System
-```
-
-Project Structure
-
-Example project structure:
-
-```text
-pick-to-light/
-│
-├── backend/
-│   ├── manage.py
-│   ├── requirements.txt
-│   ├── config/
-│   ├── orders/
-│   ├── inventory/
-│   ├── products/
-│   └── picking/
-│
-├── frontend/
-│   ├── index.html
-│   ├── css/
-│   └── js/
-│
-├── hardware/
-│   ├── controller/
-│   └── ptl_module/
-│
-├── database/
-│   └── schema.sql
-│
-├── docs/
-│   ├── architecture.png
-│   └── system-flow.png
-│
-├── README.md
-└── requirements.txt
-```
 
 Security & Reliability
 
@@ -318,9 +173,6 @@ The Pick-to-Light system can be used in:
 - Assembly lines
 - Logistics and distribution centers
 
-Example:
-
-![Pick-to-Light Dashboard](docs/dashboard.png)
 
 Project Highlights
 
