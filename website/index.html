@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVOTEK Pick to Light System</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="assets/Novotek%20Logo%20Transparent.png" alt="NOVOTEK">
+    <div class="divider"></div>
+    <div>
+      <h1>Pick to Light System</h1>
+      <p>Smart Picking &nbsp; | &nbsp; Higher Accuracy &nbsp; | &nbsp; Faster Operations</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <div class="theme-control">
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect" aria-label="Color theme">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+    <div class="datetime">
+      <span class="datetime-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M7 2.75v2.5M17 2.75v2.5M4.5 8.25h15M6.5 5.25h11A2.5 2.5 0 0 1 20 7.75v10A2.5 2.5 0 0 1 17.5 20.25h-11A2.5 2.5 0 0 1 4 17.75v-10A2.5 2.5 0 0 1 6.5 5.25Zm-1 7.5h15"/></svg>
+      </span>
+      <div>
+        <span class="datetime-label">LOCAL DATE &amp; TIME</span>
+        <strong id="clockDate"></strong>
+        <time id="clockTime"></time>
+      </div>
+    </div>
+    <div class="operator"><span></span><div><b>Administrator</b><strong>Suresh Kumar</strong></div></div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button data-page="dashboard" class="nav active">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9.5Z"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button data-page="active" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-11Zm3 2h10M7 12h10M7 15.5h6"/></svg>
+      <span>Active Order</span>
+    </button>
+    <button data-page="parts" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Zm8 3.5v8m-8-8 8 4.5 8-4.5"/></svg>
+      <span>Parts / Bins</span>
+    </button>
+    <button data-page="partdetails" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10A2.5 2.5 0 0 1 19.5 7v10A2.5 2.5 0 0 1 17 19.5H7A2.5 2.5 0 0 1 4.5 17V7A2.5 2.5 0 0 1 7 4.5Zm2.5 4h5m-5 4h7m-7 4h6"/></svg>
+      <span>Part Details</span>
+    </button>
+    <button data-page="history" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2M20 12a8 8 0 1 1-2.34-5.66M20 4v4h-4"/></svg>
+      <span>Pick History</span>
+    </button>
+    <button data-page="reports" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V9m7 10V5m7 14v-8"/></svg>
+      <span>Reports</span>
+    </button>
+    <button data-page="settings" class="nav">
+      <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.75v2.2m0 16.1v2.2m9.25-9.25h-2.2m-16.1 0h-2.2M18.77 5.23l-1.56 1.56M6.79 17.21l-1.56 1.56M18.77 18.77l-1.56-1.56M6.79 6.79 5.23 5.23M12 7a5 5 0 1 1 0 10a5 5 0 0 1 0-10Z"/></svg>
+      <span>Settings</span>
+    </button>
+  </aside>
+
+  <main id="app"></main>
+</div>
+
+<script src="local-hardware.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
