@@ -169,6 +169,49 @@ document.querySelectorAll(".nav").forEach((b) => b.onclick = () => go(b.dataset.
 
 
 const app = document.getElementById("app");
+const toastRegion = document.getElementById("toastRegion");
+
+function showToast(message, type = "info") {
+  if (!toastRegion || !message) return;
+  const toast = document.createElement("div");
+  toast.className = "app-toast app-toast-" + type;
+  toast.textContent = message;
+  toast.setAttribute("role", type === "error" ? "alert" : "status");
+  toastRegion.appendChild(toast);
+  while (toastRegion.children.length > 4) toastRegion.firstElementChild.remove();
+  window.setTimeout(() => {
+    toast.classList.add("app-toast-leaving");
+    window.setTimeout(() => toast.remove(), 220);
+  }, 2800);
+}
+
+function toastMessageForButton(button, label) {
+  const key = label.toLowerCase();
+  if (button.classList.contains("nav") || button.dataset.page) return null;
+  if (button.classList.contains("part-detail-tab") || button.dataset.partTab) return null;
+  if (button.dataset.selectPart || key === "+" || key === "-") return null;
+  if (key === "cancel" || key === "close" || key.includes("close")) return null;
+  if (key === "pick now" || key.includes("save") || key.includes("update")) return null;
+  if (key === "order list" || key === "bom list" || key === "favorites" || key === "custom bom") return null;
+  if (key.includes("refresh")) return "Refreshing available COM ports...";
+  if (key.includes("clear log")) return "Receive log cleared";
+  if (key.includes("apply filters")) return "Applying filters...";
+  if (key.includes("delete") || key.includes("remove")) return "Opening delete confirmation";
+  if (key.includes("add") || key.includes("new")) return "Opening " + label.toLowerCase() + "...";
+  if (key.includes("edit")) return "Opening edit form";
+  return null;
+}
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("button");
+  if (!button || button.disabled) return;
+  const label = (button.getAttribute("aria-label") || button.innerText || button.title || "Action")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 64);
+  const msg = toastMessageForButton(button, label);
+  if (msg) showToast(msg);
+}, true);
 const hardwareBridge = window.ptlHardware || window.ptlLocalHardware || null;
 
 function hardwareStatusText() {
@@ -217,7 +260,7 @@ function updateHardwareData(frame) {
 function clearHardwareRxLog() {
   hardwareRxFrames = [];
   const log = document.getElementById('hardwareRxLog');
-  if (log) log.innerHTML = hardwareRxLogMarkup();
+  if (log) log.innerHTML = '<p class="hardware-rx-empty">Log cleared. Waiting for new serial data.</p>';
 }
 function connectHardware() {
   if (!hardwareBridge) {
@@ -238,10 +281,16 @@ function connectHardware() {
     .catch((error) => updateHardwareStatus({ state: "offline", message: error.message }));
 }
 
-function loadSerialPorts() {
-  if (!hardwareBridge) return;
-  hardwareBridge.listPorts().then((ports) => {
-    const list = document.getElementById("availableComPorts");
+async function loadSerialPorts() {
+  const button = document.getElementById("refreshPortsButton");
+  const list = document.getElementById("availableComPorts");
+  if (!hardwareBridge) {
+    updateHardwareStatus({ state: "offline", port: settings.com, baudRate: Number(settings.baud), message: "Run the desktop app to access USB serial" });
+    return;
+  }
+  if (button) { button.disabled = true; button.textContent = "REFRESHING..."; }
+  try {
+    const ports = await hardwareBridge.listPorts();
     if (!list) return;
     list.replaceChildren(...ports.map((port) => {
       const option = document.createElement("option");
@@ -249,7 +298,13 @@ function loadSerialPorts() {
       option.label = [port.path, port.manufacturer, port.friendlyName].filter(Boolean).join(" - ");
       return option;
     }));
-  }).catch(() => {});
+    const selectedPortAvailable = ports.some((port) => port.path.toUpperCase() === settings.com.toUpperCase());
+    updateHardwareStatus({ message: ports.length ? (selectedPortAvailable ? "Port list refreshed; selected adapter is available" : "Port list refreshed; select an available COM port") : "No serial ports found; check the USB adapter connection" });
+  } catch (error) {
+    updateHardwareStatus({ state: "offline", port: settings.com, baudRate: Number(settings.baud), message: error.message || "Unable to refresh serial ports" });
+  } finally {
+    if (button && button.isConnected) { button.disabled = false; button.textContent = "REFRESH PORTS"; }
+  }
 }
 
 const dashboardReturnObserver = new MutationObserver(() => {
@@ -1089,7 +1144,7 @@ function pickNow() {
   const order = currentOrder();
   if (!order) return;
   if (pickedQty(p) >= requiredQty(p)) {
-    alert("This item is already fully picked.");
+    showToast("This item is already fully picked for " + order.id + ".", "error");
     return;
   }
 
@@ -1107,6 +1162,15 @@ function pickNow() {
   });
   save();
   dashboard();
+  const currentTotalPending = currentBOMItems().reduce((acc, { item, partIndex }) => {
+    const pt = parts[partIndex];
+    return acc + Math.max(0, item.quantity - pickedQty(pt));
+  }, 0);
+  if (currentTotalPending === 0) {
+    showToast("Order " + order.id + " is now 100% picked and complete!", "success");
+  } else {
+    showToast("Picked 1 unit of " + p[0] + " at Bin " + p[4] + ".", "success");
+  }
 }
 
 function activeOrder() {
@@ -1566,9 +1630,9 @@ function renderPartDetailRows() {
       "<td class=\"part-serial-cell\">" + (index + 1) + "</td>" +
       "<td class=\"part-thumbnail-cell\" data-image-part=\"" + escapeHtml(item.partNo) + "\"><span class=\"part-thumbnail-placeholder\" aria-label=\"No image uploaded\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"16\" rx=\"2\"/><circle cx=\"8.5\" cy=\"9\" r=\"1.5\"/><path d=\"m4 17 5-5 3 3 3-3 5 5\"/></svg></span></td>" +
       "<td class=\"part-code-cell\">" + escapeHtml(item.partNo) + "</td>" +
-      "<td>" + escapeHtml(item.description || "—") + "</td>" +
-      "<td>" + escapeHtml(item.material || "—") + "</td>" +
-      "<td>" + escapeHtml(item.colour || "—") + "</td>" +
+      "<td>" + escapeHtml(item.description || "â€”") + "</td>" +
+      "<td>" + escapeHtml(item.material || "â€”") + "</td>" +
+      "<td>" + escapeHtml(item.colour || "â€”") + "</td>" +
       "<td class=\"part-available-cell\">" + escapeHtml(item.availableQty) + "</td>" +
       "<td><span class=\"part-detail-status " + statusClass + "\">" + escapeHtml(item.status) + "</span></td>" +
       "<td class=\"part-row-actions\"><button type=\"button\" class=\"part-row-icon-button edit\" data-edit-part=\"" + escapeHtml(item.partNo) + "\" aria-label=\"Edit " + escapeHtml(item.partNo) + "\" title=\"Edit part\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m14 5 5 5M4 20l4.2-.8L19 8.4 15.6 5 4.8 15.8 4 20Z\"/></svg></button>" +
@@ -1629,7 +1693,7 @@ function renderPartDetailTab() {
   } else if (activePartDetailTab === "inventory") {
     content.innerHTML = "<div class=\"part-grid inventory-grid\">" + field("Available Quantity", "availableQty", stock, "number") + field("Minimum Stock", "minimum", part.minimum || "0", "number") + field("Maximum Stock", "maximum", part.maximum || "0", "number") + field("Unit of Measure", "unit", part.unit || "PCS") + field("Inventory Status", "status", part.status) + field("Date & Time", "updatedAt", part.updatedAt || "") + "</div>";
   } else if (activePartDetailTab === "image") {
-    content.innerHTML = "<div class=\"part-image-heading\"><div><strong>" + escapeHtml(part.partNo) + " — " + escapeHtml(part.description) + "</strong><span>Upload an image and a drawing, when available, for this part.</span></div></div><div class=\"part-asset-grid\"><section class=\"part-asset-card\"><h4>Part Image</h4><div class=\"part-image-preview\" id=\"partImagePreview\"><img id=\"partImage\" alt=\"Image for " + escapeHtml(part.partNo) + "\" hidden><div class=\"part-image-empty\" id=\"partImageEmpty\"><strong>No image uploaded</strong><span>Use Upload and choose an image file.</span></div></div><p class=\"part-asset-file\" id=\"partImageName\">No image file selected</p><div class=\"part-asset-controls\"><button class=\"detail-button secondary\" id=\"uploadDetailImage\" type=\"button\">Add Image</button><button class=\"detail-button secondary remove-part-asset\" id=\"removeDetailImage\" type=\"button\" disabled onclick=\"removePartImage()\">Remove Image</button></div></section><section class=\"part-asset-card\"><h4>Image / Drawing</h4><div class=\"part-drawing-preview\" id=\"partDrawingPreview\"><strong id=\"partDrawingName\">No drawing uploaded</strong><a id=\"partDrawingLink\" hidden target=\"_blank\" rel=\"noopener\">View / Download Drawing</a></div><p class=\"part-asset-file\">Supported drawings: PDF, DXF, DWG</p><div class=\"part-asset-controls\"><button class=\"detail-button secondary\" id=\"uploadDetailDrawing\" type=\"button\">Add Drawing</button><button class=\"detail-button secondary remove-part-asset\" id=\"removeDetailDrawing\" type=\"button\" disabled onclick=\"removePartDrawing()\">Remove Drawing</button></div></section></div><p class=\"part-image-status\" id=\"partImageStatus\" role=\"status\"></p>";
+    content.innerHTML = "<div class=\"part-image-heading\"><div><strong>" + escapeHtml(part.partNo) + " â€” " + escapeHtml(part.description) + "</strong><span>Upload an image and a drawing, when available, for this part.</span></div></div><div class=\"part-asset-grid\"><section class=\"part-asset-card\"><h4>Part Image</h4><div class=\"part-image-preview\" id=\"partImagePreview\"><img id=\"partImage\" alt=\"Image for " + escapeHtml(part.partNo) + "\" hidden><div class=\"part-image-empty\" id=\"partImageEmpty\"><strong>No image uploaded</strong><span>Use Upload and choose an image file.</span></div></div><p class=\"part-asset-file\" id=\"partImageName\">No image file selected</p><div class=\"part-asset-controls\"><button class=\"detail-button secondary\" id=\"uploadDetailImage\" type=\"button\">Add Image</button><button class=\"detail-button secondary remove-part-asset\" id=\"removeDetailImage\" type=\"button\" disabled onclick=\"removePartImage()\">Remove Image</button></div></section><section class=\"part-asset-card\"><h4>Image / Drawing</h4><div class=\"part-drawing-preview\" id=\"partDrawingPreview\"><strong id=\"partDrawingName\">No drawing uploaded</strong><a id=\"partDrawingLink\" hidden target=\"_blank\" rel=\"noopener\">View / Download Drawing</a></div><p class=\"part-asset-file\">Supported drawings: PDF, DXF, DWG</p><div class=\"part-asset-controls\"><button class=\"detail-button secondary\" id=\"uploadDetailDrawing\" type=\"button\">Add Drawing</button><button class=\"detail-button secondary remove-part-asset\" id=\"removeDetailDrawing\" type=\"button\" disabled onclick=\"removePartDrawing()\">Remove Drawing</button></div></section></div><p class=\"part-image-status\" id=\"partImageStatus\" role=\"status\"></p>";
     loadPartImage(part.partNo);
     loadPartDrawing(part.partNo);
     document.getElementById("uploadDetailImage").addEventListener("click", () => requestPartUpload("image"));
@@ -2754,9 +2818,9 @@ function settingsPage() {
         </div>
         <div class="actions">
           <button class="btn" onclick="saveSettings()">SAVE SETTINGS</button>
-          <button class="btn secondary" type="button" onclick="loadSerialPorts()">REFRESH PORTS</button>
+          <button id="refreshPortsButton" class="btn secondary" type="button" onclick="loadSerialPorts()">REFRESH PORTS</button>
         </div>
-        <p class="settings-notice" id="hardwareSettingsNotice">
+        <p class="settings-notice" id="hardwareSettingsNotice" role="status" aria-live="polite">
           Serial adapter: waiting for connection.
         </p>
         <section class="hardware-monitor" aria-labelledby="hardwareMonitorTitle">
@@ -2785,6 +2849,7 @@ function saveSettings() {
   save();
   settingsPage();
   connectHardware();
+  showToast("Settings saved successfully.", "success");
 }
 
 function customBOM() {
@@ -2795,18 +2860,46 @@ function customBOM() {
       <div class="full-panel">
         <div class="form-grid">
           <label>BOM Name</label>
-          <input placeholder="Enter BOM name">
+          <input id="customBOMName" placeholder="Enter BOM name" required>
           <label>Customer</label>
-          <input placeholder="Customer name">
+          <input id="customBOMCustomer" placeholder="Customer name" required>
           <label>Notes</label>
-          <input placeholder="Notes">
+          <input id="customBOMNotes" placeholder="Notes">
         </div>
         <div class="actions">
-          <button class="btn" onclick="alert('Custom BOM saved in prototype mode.')">SAVE CUSTOM BOM</button>
+          <button type="button" class="btn" onclick="saveCustomBOM()">SAVE CUSTOM BOM</button>
         </div>
       </div>
     </div>
   `;
+}
+
+function saveCustomBOM() {
+  const name = document.getElementById("customBOMName").value.trim();
+  const customer = document.getElementById("customBOMCustomer").value.trim();
+  const notes = document.getElementById("customBOMNotes").value.trim();
+  if (!name || !customer) {
+    showToast("Enter a BOM name and customer before saving.", "error");
+    return;
+  }
+  if (boms.some((bom) => bom.name.toLowerCase() === name.toLowerCase())) {
+    showToast("A BOM with that name already exists.", "error");
+    return;
+  }
+  const sourceBOM = currentBOM();
+  const items = sourceBOM ? sourceBOM.items.map((item) => ({ ...item })) : [];
+  if (!items.length) {
+    showToast("Add at least one item in BOM List before creating a custom BOM.", "error");
+    return;
+  }
+  const number = nextBOMNumber();
+  const id = "BOM-" + Date.now();
+  boms.push({ id, number, name, description: notes || "Custom BOM for " + customer, customer, items });
+  bomNumberSequence = Math.max(bomNumberSequence, Number(number.match(/(\d+)$/)?.[1]) || 0);
+  selectedBOMId = id;
+  save();
+  dashboard();
+  showToast(number + " saved for " + customer + ".", "success");
 }
 
 function favorites() {
