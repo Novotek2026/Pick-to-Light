@@ -1,0 +1,31 @@
+{
+  "id": "./",
+  "name": "NOVOTEK Pick to Light System",
+  "short_name": "NOVOTEK PTL",
+  "description": "NOVOTEK warehouse pick-to-light application",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef4f9",
+  "theme_color": "#073f78",
+  "icons": [
+    {
+      "src": "assets/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

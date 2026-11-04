@@ -4616,3 +4616,44 @@ textarea {
 @media (max-width: 600px) {
   .app-toast-region { bottom: 10px; right: 10px; width: calc(100vw - 20px); }
 }
+
+.install-app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #0b5da8;
+  border-radius: 7px;
+  background: #07549a;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 2px 5px #073f7825;
+}
+
+.install-app-button:hover {
+  background: #06477f;
+}
+
+.install-app-button:focus-visible {
+  outline: 3px solid #74b8f2;
+  outline-offset: 2px;
+}
+
+.install-app-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.install-app-button[hidden] {
+  display: none !important;
+}
